@@ -8,14 +8,11 @@ import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 
 /**
- * Email provider configuration.
- *
- * Auth.js v5's Nodemailer provider needs a `server` option, but for local dev
- * we want magic links to go to the console without requiring an SMTP server.
- * We do that by overriding `sendVerificationRequest` with a console logger.
+ * Auth.js v5 setup. Sessions are JWT-backed so we don't need a session-table
+ * lookup on every request. The Drizzle adapter still owns users / accounts /
+ * verification_tokens for the email magic-link flow.
  */
 const emailProvider = Nodemailer({
-  // Auth.js requires _something_ here even when we override sendVerificationRequest.
   server: env.AUTH_EMAIL_SERVER ?? 'smtp://localhost:1025',
   from: env.AUTH_EMAIL_FROM || 'no-reply@localhost',
   async sendVerificationRequest({ identifier, url }) {
@@ -29,8 +26,6 @@ const emailProvider = Nodemailer({
       )
       return
     }
-    // Production / configured dev — fall back to the default Nodemailer sender.
-    // Importing inside the function avoids loading nodemailer when we don't need it.
     const { createTransport } = await import('nodemailer')
     const transport = createTransport(env.AUTH_EMAIL_SERVER ?? '')
     await transport.sendMail({
@@ -50,11 +45,23 @@ export const authConfig: NextAuthConfig = {
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  session: { strategy: 'database' },
+  session: { strategy: 'jwt' },
   secret: env.AUTH_SECRET,
   providers: [emailProvider],
   pages: {
     signIn: '/sign-in',
+    verifyRequest: '/sign-in?verify=1',
+    error: '/sign-in',
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user?.id) token.sub = user.id
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) session.user.id = token.sub
+      return session
+    },
   },
 }
 

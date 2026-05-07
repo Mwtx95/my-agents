@@ -28,17 +28,27 @@ Magic-link sign-in: in dev with no `AUTH_EMAIL_FROM` set, the magic link is prin
 ## Scripts
 
 ```
-pnpm dev          # start dev server
-pnpm build        # production build
-pnpm start        # run production build
-pnpm test         # vitest unit + integration
-pnpm test:e2e     # playwright (PR 2+)
-pnpm lint         # eslint
-pnpm typecheck    # tsc --noEmit
-pnpm db:push      # apply Drizzle schema
-pnpm db:seed      # seed agents
-pnpm db:studio    # drizzle studio
+pnpm dev               # start dev server
+pnpm build             # production build
+pnpm start             # run production build
+pnpm test              # vitest (unit; integration auto-skips without a DB)
+pnpm test:integration  # vitest, integration suite (needs Postgres)
+pnpm test:e2e          # playwright smoke test (needs built app + Postgres)
+pnpm test:e2e:install  # download playwright browsers
+pnpm lint              # eslint
+pnpm typecheck         # tsc --noEmit
+pnpm db:push           # apply Drizzle schema
+pnpm db:seed           # seed agents
+pnpm db:studio         # drizzle studio
 ```
+
+The integration suite runs against the Postgres connection in
+`INTEGRATION_DATABASE_URL` (defaults to `DATABASE_URL`). When unset, integration
+tests are skipped and the unit suite runs alone.
+
+The e2e smoke test boots the production server (`next start`) and uses the
+Postgres pointed at by `DATABASE_URL`. It signs in by reading the magic-link
+token directly from `verification_tokens` rather than scraping email.
 
 ## Project layout
 

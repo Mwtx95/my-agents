@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation'
 
-export default function HomePage() {
-  redirect('/sign-in')
+import { auth } from '@/lib/auth'
+
+export default async function HomePage() {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/sign-in')
+  redirect('/pm')
 }

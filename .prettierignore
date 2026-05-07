@@ -1,0 +1,12 @@
+node_modules
+.next
+.vercel
+pnpm-lock.yaml
+src/db/migrations
+
+# User-authored project docs — leave formatting as-is.
+SPEC.md
+BUILD_PLAN.md
+CLAUDE.md
+README.md
+prompts/
